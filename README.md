@@ -121,13 +121,13 @@ resource "aws_dynamodb_table" "terraform-state-lock" {
 
 #### 4.1.2. 결과
 
+- 상태 파일을 저장하는 버킷
+
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc1.png)
 
-- 상태 파일을 저장하는 버킷 생성
+- Lock 파일을 저장하는 테이블
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc2.png)
-
-- Lock 파일을 저장하는 테이블 생성
 
 ### 4.2. VPC, 서브넷 생성
 #### 4.2.1. VPC, Subnet Terraform Code
@@ -146,7 +146,11 @@ resource "aws_dynamodb_table" "terraform-state-lock" {
 
 #### 4.2.2. 결과
 
+- VPC
+
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc3.png)
+
+- 서브넷
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc4.png)
 
@@ -158,6 +162,8 @@ resource "aws_dynamodb_table" "terraform-state-lock" {
 - Backend 애플리케이션 도커 이미지가 저장될 리포지토리 선언
 
 #### 4.3.2. 결과
+
+- ECR 프라이빗 리포지토리
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc5.png)
 
@@ -191,12 +197,16 @@ resource "aws_s3_bucket_acl" "s3-static-web-server" {
 
 #### 4.4.2. 결과
 
+- 정적 웹 파일을 저장하는 S3 버킷
+
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc6.png)
+
+- 호스팅되고 있는 Frontend 애플리케이션
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc7.png)
 
-## 5. RDS 생성
-### 5.1. RDS Terraform Code
+### 4.5. RDS 생성
+#### 4.5.1. RDS Terraform Code
 
 ```hcl
 resource "aws_db_subnet_group" "rds-subnet-group" {  
@@ -226,19 +236,21 @@ resource "aws_db_instance" "hanggi-rds" {
 }
 ```
 
-#### 5.1.1. Issue: Option Combination Error
+#### 4.5.2. Issue: Option Combination Error
 
 - RDS를 생성할 때는 옵션의 조합을 잘 봐야 함
 - 처음에 프리 티어 사용을 위해 t2.micro 인스턴스를 선택
 	- 고가용성을 위해 Multi-AZ로 DB를 구성할 경우 t2 시리즈는 지원하지 않음
 - t3.micro 인스턴스를 사용해 해결
 
-### 5.2. 결과
+### 4.5.3. 결과
+
+- RDS
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc8.png)
 
-## 6. EKS 클러스터, 노드 생성
-### 6.1. EKS Terraform Code
+### 4.6. EKS 클러스터, 노드 생성
+#### 4.6.1. EKS Terraform Code
 
 ```hcl
 resource "aws_eks_cluster" "hanggi-eks-cluster" {  
@@ -274,14 +286,21 @@ resource "aws_eks_node_group" "eks-nodes" {
 }
 ```
 
-#### 6.1.1. Issue: Unsupported AMI
+- 테라폼 코드에서 스케일링 설정을 해 노드의 개수를 조절할 수 있음
+	- 역시 변경 후에 `terraform apply` 만 입력하면 됨
+
+#### 4.6.2. Issue: Unsupported AMI
 
 - Amazon Linux 계열이 아니면 호환을 백프로 보장해주지는 않는듯 함
 - 호환되는 Amazon Linux를 명시해 해결
 
-### 6.2. 결과
+#### 4.6.3. 결과
+
+- EKS 클러스터
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc9.png)
+
+- 3개의 노드와 노드 그룹
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc10.png)
 
