@@ -28,7 +28,7 @@
 	- Terraform
 - CI/CD
 	- GitHub Actions
-	- ArgoCD
+	- Argo CD
 
 ## 2. CI/CD Pipeline
 
@@ -47,7 +47,7 @@
 2. 변경 사항이 생길 시 Git Actions 동작
 	1. Flask 애플리케이션을 도커 이미지로 빌드 후 AWS ECR로 Push
 	2. seungwonbased/cicd-argocd 리포지토리의 버전 태그 업데이트
-3. ArgoCD가 seungwonbased/cicd-argocd 리포지토리를 감시하고 있다가 버전 태그가 업데이트되면 EKS에 Sync 알림 전달
+3. Argo CD가 seungwonbased/cicd-argocd 리포지토리를 감시하고 있다가 버전 태그가 업데이트되면 EKS에 Sync 알림 전달
 	1. 개발자의 코드를 한 번 검토하고 배포하고 싶을 경우 Manual, 자동으로 배포하고 싶을 경우 Autosync
 4. EKS가 Sync를 전달받으면 ECR에 해당 버전이 태그되어 있는 이미지를 이용해 새로운 Deployment 생성
 
@@ -68,12 +68,10 @@
 	- 로컬 머신에 Kubernetes 콘솔을 구성해 kubectl 명령으로 관리 가능
 - ECR의 프라이빗 리포지토리 사용
 
-## 4. Infrastructure as Code
+## 4. Infrastructure as Code, 주요 리소스 생성 과정
 
-- 한 번의 `terraform apply` 명령으로 인스턴스, 클러스터, 역할 등의 모든 AWS 리소스 배포
+- 테라폼 루트 디렉터리에서 한 번의 `terraform apply` 명령으로 인스턴스, 클러스터, 역할 등의 모든 AWS 리소스 배포
 - Terraform 코드를 모듈화하여 유지보수를 용이하게 하고 가독성을 높임
-
-> 주요 리소스 생성 과정
 
 ### 4.1. Terraform S3, DynamoDB 백엔드 구성
 #### 4.1.1. Backend Terraform Code
@@ -303,4 +301,223 @@ resource "aws_eks_node_group" "eks-nodes" {
 - 3개의 노드와 노드 그룹
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc10.png)
+
+## 5. CI/CD Pipeline 구축 과정
+### 5.1. GitHub Actions
+#### 5.1.1. Frontend Workflow
+
+```yaml
+name: CI/CD to AWS S3
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        env:
+          CI: false
+        with:
+          node-version: 18.x
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build react app
+        run: npm run build
+
+      - name: Configure AWS IAM
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+          
+      - name: Upload built react file to S3
+        run: aws s3 sync build/ s3://hanggi-static-web-server --acl public-read
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+```
+
+1. 코드 Checkout
+2. Node.js 세팅 (버전, 환경 변수)
+3. 종속성 설치
+4. React 애플리케이션 빌드
+5. AWS IAM 인증 정보 구성
+6. AWS S3에 업로드하여 정적 웹 호스팅
+
+- Issue
+	- 깃허브 액션에서 Warning을 Error로 처리하도록 기본 설정 되어있어 컴파일 실패
+	- 환경 변수에 CI를 false로 넣어주거나, package.json의 scripts.build에 ci=false 구문 삽입하여 해결
+
+#### 5.1.2. Backend Workflow
+
+```yaml
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Bump version and push tag
+      id: tag_version
+      uses: mathieudutour/github-tag-action@v5.5
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create a GitHub release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+      with:
+        tag_name: ${{ steps.tag_version.outputs.new_tag }}
+        release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+        body: ${{ steps.tag_version.outputs.changelog }}
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build and push Docker image to ECR
+      run: |
+        docker build -t ${{ secrets.AWS_REGISTRY_URL }}/\
+        ${{ secrets.AWS_REPOSITORY_URL }}:\
+        ${{ steps.tag_version.outputs.new_tag }} \
+        --platform linux/amd64 .
+        docker push ${{ secrets.AWS_REGISTRY_URL }}/\
+        ${{ secrets.AWS_REPOSITORY_URL }}:\
+        ${{ steps.tag_version.outputs.new_tag }}
+    
+    - name: Checkout for Kustomize repository
+      uses: actions/checkout@v3
+      with:
+        repository: seungwonbased/hanggi-argocd
+        ref: main 
+        token: ${{ secrets.PAT }}
+        path: hanggi-argocd
+
+    - name: Update Kubernetes resources
+      run: |
+        pwd
+        cd hanggi-argocd/overlays/prd/ 
+        kustomize edit set image ${{ steps.login-ecr.outputs.registry }}/\
+        hanggi-ecr=${{ steps.login-ecr.outputs.registry }}/\
+        hanggi-ecr:${{ steps.tag_version.outputs.new_tag }}
+        cat kustomization.yaml
+    - name: Commit menifest files
+      env: 
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+      run: |
+        cd hanggi-argocd
+        git config --global user.email "21storeo@gmail.com"
+        git config --global user.name "seungwonbased"
+        git config --global github.token ${{ secrets.PAT }}
+        git commit -am "Update image tag \
+        ${{ steps.tag_version.outputs.new_tag }}"
+        git push -u origin main
+```
+
+1. 코드 Checkout
+2. 버전 태그 생성, 자동 Tagging 프로그램 사용
+3. GitHub 릴리즈 생성
+4. AWS IAM 인증 정보 구성
+5. AWS ECR에 로그인
+6. 도커 이미지 빌드, Tagging 후 프라이빗 리포지토리에 Push
+7. ArgoCD Kustomize 리포지토리 Checkout
+	1. 새 이미지 버전으로 파일의 태그 수정
+	2. Kustomize로 Image Tag 값 변경
+8. ArgoCD 리포지토리의 쿠버네티스 리소스 업데이트
+9. 수정된 kustomize.yaml 파일 ArgoCD 리포지토리에 Push
+
+### 5.2. 로컬 머신에 EKS에 명령하기 위한 Kubernetes 콘솔 구성
+
+```bash
+> aws eks --region us-west-2 update-kubeconfig --name hanggi-cluster
+```
+
+### 5.3. Argo CD 설정
+#### 5.3.1. 클러스터에 Argo CD 설치
+
+```bash
+> kubectl create namespace argocd kubectl apply -n argocd -f 
+> https://raw.githubusercontent.com/argoproj/\
+  argo-cd/stable/manifests/ha/install.yaml
+```
+
+#### 5.3.2.Argo CD 외부 접속 허용
+
+```bash
+> kubectl patch svc argocd-server -n argocd -p \
+  '{"spec": {"type": "LoadBalancer"}}'
+```
+
+#### 5.3.3. Password 확인
+
+```
+> kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d; echo
+```
+
+- base64로 인코딩되어 있으므로 디코딩
+
+#### 5.3.4. Web GUI 접속 주소 확인
+
+```bash
+> kubectl get svc argocd-server -n argocd
+```
+
+#### 5.3.5. 로그인 및 Argo CD 애플리케이션 생성
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc11.png)
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc12.png)
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc13.png)
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc14.png)
+
+#### 5.3.6. Backend 애플리케이션 코드 개발 및 수정 후 Push
+
+- 기존의 EKS 클러스터에 떠있는 리소스
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc15.png)
+
+- Backend 애플리케이션 코드 수정 후 Push -> Github Actions 동작
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc16.png)
+
+- Argo CD 애플리케이션 Sync 성공
+- 클러스터에 새로운 버전 자동 배포
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc17.png)
+
+- 클러스터의 리소스 확인
+
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc18.png)
+
 
