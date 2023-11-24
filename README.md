@@ -46,7 +46,8 @@ resource "aws_dynamodb_table" "terraform-state-lock" {
 
 ### 1.1. 결과
 
-![[Screenshot 2023-11-24 at 11.07.25.png]]
+![sc]()
+
 - 상태 파일을 저장하는 버킷 생성
 
 
