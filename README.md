@@ -2,14 +2,20 @@
 
 ## 1. 프로젝트 소개
 
-- [\[Flask SSR\] 한끼얼마](https://github.com/seungwonbased/ssg-recipe-project)
-- [\[Dockerizing\] 도커화된 한끼얼마](https://github.com/seungwonbased/dockerized-recipe-book)
-- [\[React\] 한끼얼마 Frontend](https://github.com/seungwonbased/ssgRecipeBook-react-frontend)
-- [\[Flask\] 한끼얼마 Restful API](https://github.com/seungwonbased/ssgRecipeBook-flask-backend)
-- [\[Kubernetes\] 한끼얼마 클러스터 구축 및 배포](https://github.com/seungwonbased/TIL/blob/main/%ED%95%9C%EB%81%BC%EC%96%BC%EB%A7%88%20K8s%20Cluster.md)
+- 이전 프로젝트
+	- [\[Flask SSR\] 한끼얼마](https://github.com/seungwonbased/ssg-recipe-project)
+	- [\[Dockerizing\] 도커화된 한끼얼마](https://github.com/seungwonbased/dockerized-recipe-book)
+	- [\[React\] 한끼얼마 Frontend](https://github.com/seungwonbased/ssgRecipeBook-react-frontend)
+	- [\[Flask\] 한끼얼마 Restful API](https://github.com/seungwonbased/ssgRecipeBook-flask-backend)
+	- [\[Kubernetes\] 한끼얼마 클러스터 구축 및 배포](https://github.com/seungwonbased/TIL/blob/main/%ED%95%9C%EB%81%BC%EC%96%BC%EB%A7%88%20K8s%20Cluster.md)
 
 - 이전에 개발했던 한끼얼마 애플리케이션의 CI, CD 파이프라인을 구축
-- AWS 아키텍처를 설계하고 테라폼을 이용해 Infra as Code 구현
+- AWS 아키텍처를 설계하고 구축
+- 테라폼을 이용해 Infra as Code 구현
+
+### 1.1. 프로젝트 멤버
+
+- 배승원
 
 ### 1.2. 기술 스택
 
