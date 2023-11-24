@@ -10,7 +10,7 @@
 	- [\[Kubernetes\] 한끼얼마 클러스터 구축 및 배포](https://github.com/seungwonbased/TIL/blob/main/%ED%95%9C%EB%81%BC%EC%96%BC%EB%A7%88%20K8s%20Cluster.md)
 
 - 이전에 개발했던 한끼얼마 애플리케이션의 CI, CD 파이프라인을 구축
-- AWS 아키텍처를 설계하고 구축
+- AWS 아키텍처를 설계
 - Terraform을 이용해 Infra as Code 구현
 
 ### 1.1. 프로젝트 멤버
