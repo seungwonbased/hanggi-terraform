@@ -32,7 +32,7 @@
 
 ## 2. CI/CD Pipeline
 
-![sc](https://github.com/seungwonbased/hanggi-terraform/tree/main/assets/cicd.png)
+![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/cicd.png)
 
 ## 1. Terraform S3, DynamoDB 백엔드 구성
 ### 1.1. Backend Terraform Code
