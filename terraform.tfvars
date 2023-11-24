@@ -1,0 +1,5 @@
+region = "us-west-2"
+vpc_name = "hanggi-vpc"
+vpc_cidr = "10.0.0.0/16"
+ecr_name = "hanggi-ecr"
+db_password = "password"
