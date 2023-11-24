@@ -20,15 +20,18 @@
 ### 1.2. 기술 스택
 
 - Frontend
-	- React
+
+     ![Static Badge](https://img.shields.io/badge/React-61DAFB?logo=React&logoColor=FFFFFF)
+
 - Backend
-	- Flask
+
+    ![Static Badge](https://img.shields.io/badge/Flask-000000?logo=Flask&logoColor=%23FFFFFF) ![Static Badge](https://img.shields.io/badge/PostgreSQL-4169E1?logo=PostgreSQL&logoColor=%23FFFFFF)
 - Infra
-	- AWS
-	- Terraform
+
+    ![Static Badge](https://img.shields.io/badge/AWS-%23232F3E?logo=Amazon%20AWS&logoColor=ffffff)  ![Static Badge](https://img.shields.io/badge/Docker-2496ED?logo=Docker&logoColor=FFFFFF) ![Static Badge](https://img.shields.io/badge/K8s-326CE5?logo=Kubernetes&logoColor=FFFFFF) ![Static Badge](https://img.shields.io/badge/Terraform-844FBA?logo=Terraform&logoColor=FFFFFF)
 - CI/CD
-	- GitHub Actions
-	- Argo CD
+
+     ![Static Badge](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=Github%20Actions&logoColor=FFFFFF) ![Static Badge](https://img.shields.io/badge/Argo%20CD-EF7B4D?logo=Argo&logoColor=FFFFFF)
 
 ## 2. CI/CD Pipeline
 
@@ -519,5 +522,3 @@ jobs:
 - 클러스터의 리소스 확인
 
 ![sc](https://github.com/seungwonbased/hanggi-terraform/blob/main/assets/sc18.png)
-
-
